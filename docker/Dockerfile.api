@@ -1,0 +1,26 @@
+FROM node:18-alpine AS builder
+
+RUN corepack enable
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/ packages/
+
+# Install dependencies in each package
+RUN pnpm install --frozen-lockfile --filter "." --filter "@api/reservation-system"
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build:api
+
+
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["npm", "start"]

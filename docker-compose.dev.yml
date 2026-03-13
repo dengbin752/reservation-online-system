@@ -1,0 +1,134 @@
+services:
+  couchbase:
+    env_file:
+      - .env
+    image: couchbase:7.6.0
+    container_name: couchbase-db-dev
+    environment:
+      - COUCHBASE_ADMINISTRATOR_USERNAME=${COUCHBASE_USERNAME:-Administrator}
+      - COUCHBASE_ADMINISTRATOR_PASSWORD=${COUCHBASE_PASSWORD:-password}
+      - COUCHBASE_BUCKET=${COUCHBASE_BUCKET:-reservations}
+      - COUCHBASE_BUCKET_RAM=256
+      - COUCHBASE_BUCKET_REPLICA=1
+      - COUCHBASE_BUCKET_TYPE=couchbase
+      - COUCHBASE_BUCKET_INDEX_RAM=256
+      - COUCHBASE_BUCKET_FTS_RAM=256
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    volumes:
+      - couchbase_data_dev:/opt/couchbase/var/lib/couchbase/data
+    networks:
+      - reservation-network-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/ui/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  
+  # redis:
+  #   env_file:
+  #     - .env
+  #   image: redis:alpine
+  #   container_name: redis-dev
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   networks:
+  #     - reservation-network-dev
+
+  # test:
+  #   env_file:
+  #     - .env
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/Dockerfile.test
+  #   container_name: test-dev
+  #   environment:
+  #     - NODE_ENV=${NODE_ENV:-development}
+
+  api:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.api.dev
+    container_name: reservation-api-dev
+    # command: -i
+    # entrypoint: /bin/sh
+    # stdin_open: true
+    # tty: true
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - COUCHBASE_HOST=${COUCHBASE_HOST:-couchbase}
+      - COUCHBASE_USERNAME=${COUCHBASE_USERNAME:-Administrator}
+      - COUCHBASE_PASSWORD=${COUCHBASE_PASSWORD:-password}
+      - COUCHBASE_BUCKET=${COUCHBASE_BUCKET:-reservations}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - PORT=${PORT:-3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      couchbase:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/shared/dist
+      - /app/packages/database/node_modules
+      - /app/packages/database/dist
+      - /app/packages/api/node_modules
+    networks:
+      - reservation-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  customer-ui:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.customer-ui.dev
+    container_name: customer-ui-dev
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/shared/dist
+      - /app/packages/customer-ui/node_modules
+    networks:
+      - reservation-network-dev
+
+  admin-ui:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.admin-ui.dev
+    container_name: admin-ui-dev
+    ports:
+      - "3002:3000"
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/shared/dist
+      - /app/packages/admin-ui/node_modules
+    networks:
+      - reservation-network-dev
+
+volumes:
+  couchbase_data_dev:
+
+networks:
+  reservation-network-dev:
+    driver: bridge

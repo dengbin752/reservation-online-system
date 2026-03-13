@@ -1,0 +1,43 @@
+{
+  "name": "hotel-reservation-system",
+  "version": "1.0.0",
+  "description": "Online table reservation system for Hotel",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "dev": "pnpm run build:shared && pnpm run build:database && pnpm --filter @api/reservation-system run build:skip-check && concurrently \"pnpm --filter @api/reservation-system --dir packages/api run dev\" ",
+    "dev:customer": "pnpm --filter=@customer-ui/reservation-system run dev",
+    "build:all": "npm run build:api && npm run build:customer && npm run build:admin",
+    "build:shared": "pnpm --filter=@shared/reservation-system build",
+    "build:database": "pnpm --filter=@database/reservation-system build",
+    "build:api": "cd packages/api && pnpm run build",
+    "build:customer": "cd packages/customer-ui && pnpm run build",
+    "build:admin": "cd packages/admin-ui && pnpm run build",
+    "test": "npm run test:api && npm run test:customer && npm run test:admin",
+    "test:api": "cd packages/api && npm test",
+    "test:customer": "cd packages/customer-ui && npm test",
+    "lint": "npm run lint:api && npm run lint:customer && npm run lint:admin",
+    "lint:api": "cd packages/api && npm run lint",
+    "lint:customer": "cd packages/customer-ui && npm run lint",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "create-admin": "node --loader ts-node/esm --experimental-specifier-resolution=node scripts/create-admin.ts",
+    "start:dev": "bash scripts/dev/start-dev.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=10.11.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/express": "4.17.14"
+    }
+  }
+}

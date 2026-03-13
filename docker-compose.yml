@@ -1,0 +1,80 @@
+services:
+  couchbase:
+    image: couchbase:7.6.0
+    container_name: couchbase-db
+    environment:
+      - COUCHBASE_ADMINISTRATOR_USERNAME=Administrator
+      - COUCHBASE_ADMINISTRATOR_PASSWORD=password
+      - COUCHBASE_BUCKET=reservations
+      - COUCHBASE_BUCKET_RAM=256
+      - COUCHBASE_BUCKET_REPLICA=1
+      - COUCHBASE_BUCKET_TYPE=couchbase
+      - COUCHBASE_BUCKET_INDEX_RAM=256
+      - COUCHBASE_BUCKET_FTS_RAM=256
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    volumes:
+      - couchbase_data:/opt/couchbase/var/lib/couchbase/data
+    networks:
+      - reservation-network
+
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.api
+    container_name: reservation-api
+    environment:
+      - NODE_ENV=development
+      - COUCHBASE_HOST=couchbase
+      - COUCHBASE_USERNAME=Administrator
+      - COUCHBASE_PASSWORD=password
+      - COUCHBASE_BUCKET=reservations
+      - JWT_SECRET=your-jwt-secret-key
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - couchbase
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - reservation-network
+
+  customer-ui:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.customer-ui
+    container_name: customer-ui
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - reservation-network
+
+  admin-ui:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.admin-ui
+    container_name: admin-ui
+    ports:
+      - "3002:3000"
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - reservation-network
+
+volumes:
+  couchbase_data:
+
+networks:
+  reservation-network:
+    driver: bridge

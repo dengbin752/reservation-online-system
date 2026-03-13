@@ -1,0 +1,33 @@
+{
+  "name": "@database/reservation-system",
+  "version": "1.0.0",
+  "description": "Couchbase database configuration and utilities for the reservation system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@shared/reservation-system": "workspace:*",
+    "couchbase": "^4.5.0"
+  }
+}
